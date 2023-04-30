@@ -2,31 +2,64 @@ import { pool } from "../app.js";
 
 export const getAllProducts = (request, response) => {
   const category = request.query.category;
+  const title = request.query.title;
   console.log(category);
+  console.log(title);
   if (!category) {
-    pool.query(
-      "SELECT * FROM products ORDER BY product_id ASC",
-      (error, results) => {
-        if (error) {
-          return response.status(500).json({ message: "Database error" });
-          //throw error
+    if (title) {
+      pool.query(
+        "SELECT * FROM products WHERE  name LIKE $1 ORDER BY product_id ASC",
+        [`%${title}%`],
+        (error, results) => {
+          if (error) {
+            return response.status(500).json({ message: "Database error" });
+            //throw error
+          }
+          return response.status(200).json(results.rows);
         }
-        return response.status(200).json(results.rows);
-      }
-    );
+      );
+    } else
+      pool.query(
+        "SELECT * FROM products ORDER BY product_id ASC",
+        (error, results) => {
+          if (error) {
+            return response.status(500).json({ message: "Database error" });
+            //throw error
+          }
+          return response.status(200).json(results.rows);
+        }
+      );
   } else {
-    pool.query(
-      "SELECT * FROM products WHERE category=$1 ORDER BY product_id ASC",
-      [category],
-      (error, results) => {
-        if (error) {
-          return response.status(500).json({ message: "database error" });
-          //throw error
-        } else if (results.rows.length === 0) {
-          return response.status(500).json({ message: "no such category" });
-        } else return response.status(200).json(results.rows);
-      }
-    );
+    if (!title) {
+      pool.query(
+        "SELECT * FROM products WHERE category=$1 ORDER BY product_id ASC",
+        [category],
+        (error, results) => {
+          if (error) {
+            return response.status(500).json({ message: "database error" });
+            //throw error
+          } else if (results.rows.length === 0) {
+            return response.status(500).json({ message: "no such category" });
+          } 
+          else return response.status(200).json(results.rows);
+        }
+      );
+    } else {
+      pool.query(
+        "SELECT * FROM products WHERE category=$1 AND name LIKE $2 ORDER BY product_id ASC",
+        [category, `%${title}%`],
+        (error, results) => {
+          if (error) {
+            return response.status(500).json({ message: "database error" });
+            //throw error
+          } 
+          // else if (results.rows.length === 0) {
+          //   return response.status(500).json({ message: "no such title" });
+          // } 
+          else return response.status(200).json(results.rows);
+        }
+      );
+    }
   }
 };
 
